@@ -8,6 +8,7 @@
 	],
 	"require": {
 		"php": ">=5.6",
+		"kdyby/console": "^2.6",
 		"nette/application": "^2.4",
 		"nette/caching": "^2.4",
 		"nette/database": "^2.4",
