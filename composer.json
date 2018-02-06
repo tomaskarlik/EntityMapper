@@ -2,7 +2,7 @@
 	"name": "tomaskarlik/entitymapper",
 	"description": "Light entity mapper for Nette",
 	"keywords": ["database", "entity", "mapper", "nette"],
-	"license": "BSD-3",
+	"license": "BSD-3-Clause",
 	"authors": [
 		{ "name": "Tomáš Karlík", "homepage": "http://tomaskarlik.cz" }
 	],
