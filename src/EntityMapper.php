@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace TomasKarlik\EntityMapper;
 
 use InvalidArgumentException;
@@ -33,14 +35,9 @@ final class EntityMapper implements EntityMapperInterface
 
 
 	/**
-	 * @param string $class
-	 * @param IRow $row
-	 * @param bool $related hydrate related entites
-	 * @return object
-	 * @throws LogicException
-	 * @throws UndefinedPropertyException
+	 * {@inheritdoc}
 	 */
-	public function hydrate($class, IRow $row, $related = TRUE)
+	public function hydrate(string $class, IRow $row, bool $related = TRUE)
 	{
 		$entity = new $class;
 		$properties = $this->getEntityProperties($entity);
@@ -92,9 +89,7 @@ final class EntityMapper implements EntityMapperInterface
 
 
 	/**
-	 * @param string|object $class
-	 * @param ArrayHash $array
-	 * @return object
+	 * {@inheritdoc}
 	 */
 	public function hydrateFromArray($class, ArrayHash &$array)
 	{
@@ -114,12 +109,9 @@ final class EntityMapper implements EntityMapperInterface
 
 
 	/**
-	 * @param object $entity
-	 * @param array $ignored
-	 * @return array
-	 * @throws LogicException
+	 * {@inheritdoc}
 	 */
-	public function extract(&$entity, array $ignored = [])
+	public function extract(&$entity, array $ignored = []): array
 	{
 		$values = [];
 		$properties = $this->getEntityProperties($entity);

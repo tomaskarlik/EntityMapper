@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace TomasKarlik\EntityMapper\DI;
 
 use Nette\DI\CompilerExtension;
+use Nette\Utils\Validators;
 use TomasKarlik\EntityMapper\Command\CreateEntityCommand;
 use TomasKarlik\EntityMapper\EntityCreator;
 use TomasKarlik\EntityMapper\EntityMapper;
@@ -11,19 +14,50 @@ use TomasKarlik\EntityMapper\EntityMapper;
 final class EntityMapperExtension extends CompilerExtension
 {
 
-	public function loadConfiguration()
+	/**
+	 * @var array
+	 */
+	private $defaults = [
+		'directory' => NULL,
+		'namespace' => 'App\\Model\\Entity',
+		'namespaces' => [],
+		'traits' => []
+	];
+
+
+	public function loadConfiguration(): void
 	{
 		$builder = $this->getContainerBuilder();
+		$configuration = $this->createConfigurationObject();
 
 		$builder->addDefinition($this->prefix('createEntityCommand'))
 			->setClass(CreateEntityCommand::class)
 			->addTag('kdyby.console.command');
 
 		$builder->addDefinition($this->prefix('entityCreator'))
-			->setClass(EntityCreator::class);
+			->setClass(EntityCreator::class, [$configuration]);
 
 		$builder->addDefinition($this->prefix('entityMapper'))
 			->setClass(EntityMapper::class);
+	}
+
+
+	private function createConfigurationObject(): Configuration
+	{
+		$config = $this->validateConfig($this->defaults);
+
+		Validators::assertField($config, 'directory', 'string');
+		Validators::assertField($config, 'namespace', 'string');
+		Validators::assertField($config, 'namespaces', 'array');
+		Validators::assertField($config, 'traits', 'array');
+
+		$configuration = new Configuration;
+		$configuration->setEntitesPath(realpath($config['directory']));
+		$configuration->setNamespace(trim($config['namespace'], Configuration::NAMESPACE_SEPARATOR));
+		$configuration->setNamespaces($config['namespaces']);
+		$configuration->setTraits($config['traits']);
+
+		return $configuration;
 	}
 
 }

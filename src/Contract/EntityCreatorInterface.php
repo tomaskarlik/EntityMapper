@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace TomasKarlik\EntityMapper\Contract;
 
 use TomasKarlik\EntityMapper\Exception\EntityCreatorException;
@@ -10,9 +12,9 @@ interface EntityCreatorInterface
 
 	/**
 	 * @param string $table
-	 * @param string $dir
+	 * @param int $chmod
 	 * @throws EntityCreatorException
 	 */
-	function create($table, $dir);
+	function create(string $table, int $chmod = 0755): void;
 
 }

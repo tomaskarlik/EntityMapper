@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace TomasKarlik\EntityMapper\Command;
 
+use Exception;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,29 +32,31 @@ final class CreateEntityCommand extends Command
 	/**
 	 * {@inheritdoc}
 	 */
-	protected function configure()
+	protected function configure(): void
 	{
 		$this->setName('entity:create-entity')
 			->setDescription('Create entity file from database table')
-			->addArgument('table', InputArgument::REQUIRED, 'Table')
-			->addArgument('dir', InputArgument::REQUIRED, 'Output directory');
+			->addArgument('table', InputArgument::REQUIRED, 'table')
+			->addArgument('chmod', InputArgument::OPTIONAL, 'chmod', 0755);
 	}
 
 
 	/**
 	 * {@inheritdoc}
 	 */
-	protected function execute(InputInterface $input, OutputInterface $output)
+	protected function execute(InputInterface $input, OutputInterface $output): ?int
 	{
 		$table = $input->getArgument('table');
-		$dir = $input->getArgument('dir');
+		$chmod = $input->getArgument('chmod');
 
-		if ( ! file_exists($dir)) {
-			$output->writeln(sprintf('Directory %s not exists!', $dir));
+		try {
+			$this->entityCreator->create($table, $chmod);
+
+		} catch (Exception $exception) {
+			$output->writeln(sprintf('Error: %s', $exception->getMessage()));
 			return 1;
 		}
 
-		$this->entityCreator->create($table, $dir);
 		return 0;
 	}
 

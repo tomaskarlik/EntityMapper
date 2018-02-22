@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace TomasKarlik\EntityMapper\Contract;
 
 use LogicException;
@@ -15,17 +17,17 @@ interface EntityMapperInterface
 	 * @param string $class
 	 * @param IRow $row
 	 * @param bool $related hydrate related entites
-	 * @return object
+	 * @return mixed
 	 * @throws LogicException
 	 * @throws UndefinedPropertyException
 	 */
-	function hydrate($class, IRow $row, $related = TRUE);
+	function hydrate(string $class, IRow $row, bool $related = TRUE);
 
 
 	/**
 	 * @param string|object $class
 	 * @param ArrayHash $array
-	 * @return object
+	 * @return mixed
 	 */
 	function hydrateFromArray($class, ArrayHash &$array);
 
@@ -36,6 +38,6 @@ interface EntityMapperInterface
 	 * @return array
 	 * @throws LogicException
 	 */
-	function extract(&$entity, array $ignored = []);
+	function extract(&$entity, array $ignored = []): array;
 
 }
