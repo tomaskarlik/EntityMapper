@@ -9,6 +9,7 @@ use LogicException;
 use Nette\Caching\Cache;
 use Nette\Caching\IStorage;
 use Nette\Database\IRow;
+use Nette\Database\IStructure;
 use Nette\Database\Table\ActiveRow;
 use Nette\MemberAccessException;
 use Nette\Reflection\ClassType;
@@ -46,7 +47,7 @@ final class EntityMapper implements EntityMapperInterface
 			foreach ($properties as $property => $column) {
 				$method = $this->getMethodName($property, 'set');
 
-				if (is_array($column)) {
+				if ($column[0] !== 'column') { //@TODO hotfix PHP7
 					if ( ! $row instanceof ActiveRow) {
 						throw new LogicException('Row must be instance of ActiveRow!');
 					}
@@ -75,7 +76,8 @@ final class EntityMapper implements EntityMapperInterface
 					}
 
 				} else {
-					$value = $row->offsetGet($column);
+					$value = $row->offsetGet($column[1]);
+					$this->setType($value, $column[2]); //@TODO hotfix PHP7
 					call_user_func([$entity, $method], $value);
 				}
 			}
@@ -96,11 +98,20 @@ final class EntityMapper implements EntityMapperInterface
 		$entity = is_object($class) ? $class : new $class;
 		$properties = $this->getEntityProperties($entity);
 
+		$properties = array_filter($properties, function ($column) { //@TODO hotfix PHP7
+			return isset($column[0]) && $column[0] === 'column';
+		});
+		$columns = array_combine( //@TODO hotfix PHP7
+			array_keys($properties),
+			array_column($properties, 1)
+		);
+
 		foreach ($array as $key => $value) {
-			if (($property = array_search($key, $properties)) === FALSE) {
+			if (($property = array_search($key, $columns)) === FALSE) {
 				continue;
 			}
 			$method = $this->getMethodName($property, 'set');
+			$this->setType($value, $properties[$key][2]); //@TODO hotfix PHP7
 			call_user_func([$entity, $method], $value);
 		}
 
@@ -121,7 +132,7 @@ final class EntityMapper implements EntityMapperInterface
 		}
 
 		foreach ($properties as $property => $column) {
-			if (is_array($column)) {
+			if ($column[0] !== 'column') { //@TODO hotfix PHP7
 				continue; //ref. and rel. rows ignore
 			}
 
@@ -134,7 +145,7 @@ final class EntityMapper implements EntityMapperInterface
 				throw new LogicException(sprintf('No get/is method for property "%s".', $property));
 			}
 
-			$values[$column] = call_user_func([$entity, $method]);
+			$values[$column[1]] = call_user_func([$entity, $method]); //@TODO hotfix PHP7
 		}
 
 		return $values;
@@ -189,7 +200,8 @@ final class EntityMapper implements EntityMapperInterface
 						$column = $this->uncamelize($key);
 					}
 
-					$entityProperties[$key] = $column;
+					$var = rtrim($property->getAnnotation('var'), '|NULL'); //@TODO hotfix PHP7
+					$entityProperties[$key] = ['column', $column, $var];
 				}
 			}
 
@@ -223,6 +235,29 @@ final class EntityMapper implements EntityMapperInterface
 		);
 
 		return strtolower($string);
+	}
+
+
+	/**
+	 * @deprecated PHP7 hotfix
+	 * @param mixed $value
+	 * @param string $type
+	 * @return void
+	 */
+	private function setType(&$value, string $type): void
+	{
+		$scalarTypes = [
+			IStructure::FIELD_BOOL,
+			IStructure::FIELD_INTEGER,
+			IStructure::FIELD_FLOAT,
+			IStructure::FIELD_TEXT
+		];
+		if ( ! in_array($type, $scalarTypes) || $value === NULL) {
+			return;
+		}
+		if ( ! settype($value, $type)) {
+			throw new InvalidArgumentException('Invalid property value!');
+		}
 	}
 
 }
