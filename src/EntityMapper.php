@@ -111,7 +111,7 @@ final class EntityMapper implements EntityMapperInterface
 				continue;
 			}
 			$method = $this->getMethodName($property, 'set');
-			$this->setType($value, $properties[$key][2]); //@TODO hotfix PHP7
+			$this->setType($value, $properties[$property][2]); //@TODO hotfix PHP7
 			call_user_func([$entity, $method], $value);
 		}
 
