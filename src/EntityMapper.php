@@ -63,8 +63,8 @@ final class EntityMapper implements EntityMapperInterface
 					} elseif ($column[0] === 'rel') {
 						$relEntites = [];
 						if ($related) {
-							$related = $row->related($column[1], $column[2]);
-							$relRows = $column[4] ? $related->order($column[4])->fetchAll() : $related->fetchAll();
+							$relatedRow = $row->related($column[1], $column[2]);
+							$relRows = $column[4] ? $relatedRow->order($column[4])->fetchAll() : $relatedRow->fetchAll();
 							foreach ($relRows as $relRow) {
 								$relEntites[] = $this->hydrate($column[3], $relRow, $related);
 							}
@@ -192,7 +192,7 @@ final class EntityMapper implements EntityMapperInterface
 
 					$entityProperties[$key] = ['rel', $rel[0], $rel[1], $var, $order];
 
-				} else {
+				} elseif ($property->hasAnnotation('var')) {
 					if ($property->hasAnnotation('column')) {
 						$column = $property->getAnnotation('column'); //custom column name
 
@@ -200,8 +200,11 @@ final class EntityMapper implements EntityMapperInterface
 						$column = $this->uncamelize($key);
 					}
 
-					$var = rtrim($property->getAnnotation('var'), '|NULL'); //@TODO hotfix PHP7
+					$var = preg_replace('#([^\|\[\]]+).*$#', '$1', $property->getAnnotation('var')); //@TODO hotfix PHP7
 					$entityProperties[$key] = ['column', $column, $var];
+
+				} else { // missing annotation
+					throw new InvalidArgumentException(sprintf('Property "%s" annotation error!', $property));
 				}
 			}
 
