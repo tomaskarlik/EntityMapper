@@ -64,9 +64,16 @@ final class EntityMapper implements EntityMapperInterface
 						$relEntites = [];
 						if ($related) {
 							$relatedRow = $row->related($column[1], $column[2]);
+							$primaryKey = $relatedRow->getPrimary(FALSE);
+							$primaryKey = $primaryKey && is_scalar($primaryKey) ? $primaryKey : NULL;
 							$relRows = $column[4] ? $relatedRow->order($column[4])->fetchAll() : $relatedRow->fetchAll();
 							foreach ($relRows as $relRow) {
-								$relEntites[] = $this->hydrate($column[3], $relRow, $related);
+								if ($primaryKey !== NULL && isset($relRow[$primaryKey])) {
+									$relEntites[$relRow[$primaryKey]] = $this->hydrate($column[3], $relRow, $related);
+
+								} else {
+									$relEntites[] = $this->hydrate($column[3], $relRow, $related);
+								}
 							}
 						}
 						call_user_func([$entity, $method], $relEntites);
