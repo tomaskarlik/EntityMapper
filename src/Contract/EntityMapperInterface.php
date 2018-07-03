@@ -27,17 +27,19 @@ interface EntityMapperInterface
 	/**
 	 * @param string|object $class
 	 * @param ArrayHash $array
+	 * @param bool $encrypt
 	 * @return mixed
 	 */
-	function hydrateFromArray($class, ArrayHash &$array);
+	function hydrateFromArray($class, ArrayHash &$array, bool $encrypt = TRUE);
 
 
 	/**
 	 * @param object $entity
 	 * @param array $ignored
+	 * @param bool $encrypt
 	 * @return array
 	 * @throws LogicException
 	 */
-	function extract(&$entity, array $ignored = []): array;
+	function extract(&$entity, array $ignored = [], bool $encrypt = TRUE): array;
 
 }

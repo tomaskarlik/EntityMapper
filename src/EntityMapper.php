@@ -15,6 +15,8 @@ use Nette\MemberAccessException;
 use Nette\Reflection\ClassType;
 use Nette\Utils\ArrayHash;
 use TomasKarlik\EntityMapper\Contract\EntityMapperInterface;
+use TomasKarlik\EntityMapper\DI\Configuration;
+use TomasKarlik\EntityMapper\Exception\MissingConfigurationException;
 use TomasKarlik\EntityMapper\Exception\UndefinedPropertyException;
 
 
@@ -28,10 +30,18 @@ final class EntityMapper implements EntityMapperInterface
 	 */
 	private $cache;
 
+	/**
+	 * @var Configuration
+	 */
+	private $configuration;
 
-	public function __construct(IStorage $cacheStorage)
-	{
+
+	public function __construct(
+		Configuration $configuration,
+		IStorage $cacheStorage
+	) {
 		$this->cache = new Cache($cacheStorage, self::CACHE_NAMESPACE);
+		$this->configuration = $configuration;
 	}
 
 
@@ -85,6 +95,9 @@ final class EntityMapper implements EntityMapperInterface
 				} else {
 					$value = $row->offsetGet($column[1]);
 					$this->setType($value, $column[2]); //@TODO hotfix PHP7
+					if ($column[3]) {
+						$value = $this->decrypt($value);
+					}
 					call_user_func([$entity, $method], $value);
 				}
 			}
@@ -100,7 +113,7 @@ final class EntityMapper implements EntityMapperInterface
 	/**
 	 * {@inheritdoc}
 	 */
-	public function hydrateFromArray($class, ArrayHash &$array)
+	public function hydrateFromArray($class, ArrayHash &$array, bool $encrypt = TRUE)
 	{
 		$entity = is_object($class) ? $class : new $class;
 		$properties = $this->getEntityProperties($entity);
@@ -117,6 +130,9 @@ final class EntityMapper implements EntityMapperInterface
 			if (($property = array_search($key, $columns)) === FALSE) {
 				continue;
 			}
+			if ($encrypt && $properties[$property][3]) {
+				$value = $this->encrypt($value);
+			}
 			$method = $this->getMethodName($property, 'set');
 			$this->setType($value, $properties[$property][2]); //@TODO hotfix PHP7
 			call_user_func([$entity, $method], $value);
@@ -129,7 +145,7 @@ final class EntityMapper implements EntityMapperInterface
 	/**
 	 * {@inheritdoc}
 	 */
-	public function extract(&$entity, array $ignored = []): array
+	public function extract(&$entity, array $ignored = [], bool $encrypt = TRUE): array
 	{
 		$values = [];
 		$properties = $this->getEntityProperties($entity);
@@ -152,7 +168,12 @@ final class EntityMapper implements EntityMapperInterface
 				throw new LogicException(sprintf('No get/is method for property "%s".', $property));
 			}
 
-			$values[$column[1]] = call_user_func([$entity, $method]); //@TODO hotfix PHP7
+			if ($encrypt && $column[3]) {
+				$values[$column[1]] = $this->encrypt(call_user_func([$entity, $method]));
+
+			} else {
+				$values[$column[1]] = call_user_func([$entity, $method]); //@TODO hotfix PHP7
+			}
 		}
 
 		return $values;
@@ -208,7 +229,8 @@ final class EntityMapper implements EntityMapperInterface
 					}
 
 					$var = preg_replace('#([^\|\[\]]+).*$#', '$1', $property->getAnnotation('var')); //@TODO hotfix PHP7
-					$entityProperties[$key] = ['column', $column, $var];
+					$encrypted = $property->hasAnnotation('encrypted');
+					$entityProperties[$key] = ['column', $column, $var, $encrypted];
 
 				} else { // missing annotation
 					throw new InvalidArgumentException(sprintf('Property "%s" annotation error!', $property));
@@ -268,6 +290,32 @@ final class EntityMapper implements EntityMapperInterface
 		if ( ! settype($value, $type)) {
 			throw new InvalidArgumentException('Invalid property value!');
 		}
+	}
+
+
+	/**
+	 * @param mixed $value
+	 * @return mixed
+	 */
+	private function decrypt($value)
+	{
+		if (empty($this->configuration->getPassword())) {
+			throw new MissingConfigurationException('Missing password for decrypt entity values!');
+		}
+		return openssl_decrypt((string) $value, 'AES-128-ECB', $this->configuration->getPassword());
+	}
+
+
+	/**
+	 * @param mixed $value
+	 * @return mixed
+	 */
+	private function encrypt($value)
+	{
+		if (empty($this->configuration->getPassword())) {
+			throw new MissingConfigurationException('Missing password for encrypt entity values!');
+		}
+		return openssl_encrypt((string) $value, 'AES-128-ECB', $this->configuration->getPassword());
 	}
 
 }

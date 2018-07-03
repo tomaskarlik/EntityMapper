@@ -21,6 +21,7 @@ final class EntityMapperExtension extends CompilerExtension
 		'directory' => NULL,
 		'namespace' => 'App\\Model\\Entity',
 		'namespaces' => [],
+		'password' => NULL,
 		'traits' => []
 	];
 
@@ -38,7 +39,7 @@ final class EntityMapperExtension extends CompilerExtension
 			->setClass(EntityCreator::class, [$configuration]);
 
 		$builder->addDefinition($this->prefix('entityMapper'))
-			->setClass(EntityMapper::class);
+			->setClass(EntityMapper::class, [$configuration]);
 	}
 
 
@@ -55,6 +56,7 @@ final class EntityMapperExtension extends CompilerExtension
 		$configuration->setEntitesPath(realpath($config['directory']));
 		$configuration->setNamespace(trim($config['namespace'], Configuration::NAMESPACE_SEPARATOR));
 		$configuration->setNamespaces($config['namespaces']);
+		$configuration->setPassword($config['password']);
 		$configuration->setTraits($config['traits']);
 
 		return $configuration;

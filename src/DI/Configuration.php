@@ -28,6 +28,11 @@ final class Configuration
 	private $namespaces = [];
 
 	/**
+	 * @var string|NULL
+	 */
+	private $password = NULL;
+
+	/**
 	 * @var string[]
 	 */
 	private $traits = [];
@@ -80,6 +85,18 @@ final class Configuration
 	public function setNamespaces(array $namespaces): void
 	{
 		$this->namespaces = $namespaces;
+	}
+
+
+	public function getPassword(): ?string
+	{
+		return $this->password;
+	}
+
+
+	public function setPassword(?string $password): void
+	{
+		$this->password = $password;
 	}
 
 

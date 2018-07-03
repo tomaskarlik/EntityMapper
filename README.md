@@ -17,12 +17,8 @@ Extension configuration:
 ```
 entityMapper:
 	directory: %appDir%/Model/Entity	# entites root directory
+	password: mySecretPassword			# password for encrypted fields (optional)
 	namespace: App\Model\Entity			# NS of entites root directory
-	traits: 							# TODO - future extension
-		- App\Model\Entity\Behaviour\Active
-		- App\Model\Entity\Behaviour\CreatedAt
-		- App\Model\Entity\Behaviour\Identifier
-		- App\Model\Entity\Behaviour\UpdatedAt
 	namespaces:
 		App\Model\Entity\User:		# entity namespace group
 			- user					# DB table
