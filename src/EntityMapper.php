@@ -202,7 +202,7 @@ final class EntityMapper implements EntityMapperInterface
 
 				} elseif ($property->hasAnnotation('ref') && $property->hasAnnotation('var')) { //has one
 					$ref = $property->getAnnotation('ref');
-					$var = $property->getAnnotation('var');
+					$var = $this->getVariableType($property->getAnnotation('var'));
 
 					if ( ! isset($ref[0]) || ! isset($ref[1]) || ! class_exists($var)) {
 						throw new InvalidArgumentException;
@@ -211,7 +211,7 @@ final class EntityMapper implements EntityMapperInterface
 
 				} elseif ($property->hasAnnotation('related') && $property->hasAnnotation('var')) { //has many
 					$rel = $property->getAnnotation('related');
-					$var = rtrim($property->getAnnotation('var'), '[]');
+					$var = $this->getVariableType($property->getAnnotation('var'));
 					$order = $property->hasAnnotation('order') ? $property->getAnnotation('order') : NULL;
 
 					if ( ! isset($rel[0]) || ! isset($rel[1]) || ! class_exists($var)) {
@@ -228,7 +228,7 @@ final class EntityMapper implements EntityMapperInterface
 						$column = $this->uncamelize($key);
 					}
 
-					$var = preg_replace('#([^\|\[\]]+).*$#', '$1', $property->getAnnotation('var')); //@TODO hotfix PHP7
+					$var = $this->getVariableType($property->getAnnotation('var'));
 					$encrypted = $property->hasAnnotation('encrypted');
 					$entityProperties[$key] = ['column', $column, $var, $encrypted];
 
@@ -316,6 +316,17 @@ final class EntityMapper implements EntityMapperInterface
 			throw new MissingConfigurationException('Missing password for encrypt entity values!');
 		}
 		return openssl_encrypt((string) $value, 'AES-128-ECB', $this->configuration->getPassword());
+	}
+
+
+	/**
+	 * @todo PHP7 fix
+	 * @param string $value
+	 * @return string
+	 */
+	private function getVariableType($value)
+	{
+		return preg_replace('#([^\|\[\]]+).*$#', '$1', trim((string) $value));
 	}
 
 }
